@@ -4,22 +4,47 @@ const { assign } = Object;
 const { ownKeys } = Reflect;
 
 /**
- * @typedef {Object} Options
- * @property {Object} [aria] - An optional literal describing `aria` attributes such as `role` or `level` or `labelledby`.
- * @property {string} [class] - The optional class to set to the element. as `className`.
- * @property {string[]} [classList] - The optional class list to add to the element.
- * @property {Object} [data] - An optional literal describing `dataset` properties.
- * @property {string} [html] - The optional html to set to the element. as `innerHTML`.
- * @property {string} [text] - The optional text to set to the element. as `textContent`.
- * @property {string} [style] - The optional style to apply to the element.
- * @property {(string | Element | SVGElement)[]} [childNodes] - An optional list of child nodes to append to the element.
- * @property {(string | Element | SVGElement)[]} [children] - An optional list of child nodes to append to the element.
+ * @template {string} CamelCase
+ * @typedef {CamelCase extends `${infer Head}${infer Tail}`
+ *   ? Tail extends Uncapitalize<Tail>
+ *     ? `${Lowercase<Head>}${KebabCase<Tail>}`
+ *     : `${Lowercase<Head>}-${KebabCase<Tail>}`
+ *   : CamelCase} KebabCase Turns camelCase into kebab-case
  */
 
 /**
- * @param {string | Element | SVGElement} tag - The tag name of the element to create or the element to use. If the name starts with `<`, it will be treated as a query selector and the first matching element will be used, if any.
+ * @typedef {{
+ *   [Key in keyof ARIAMixin as Key extends `aria${infer Rest}`
+ *     ? KebabCase<Uncapitalize<Rest>>
+ *     : Key]?: string;
+ * }} AriaAttributes Turns AriaMixin global properties into their attribute counterparts.
+ */
+
+/**
+ * @typedef {keyof (SVGElementTagNameMap & HTMLElementTagNameMap) | `${string}-${string}`} TagName List of possible tag names
+ */
+
+/**
+ * @typedef {TagName | `<${string}` | Element | SVGElement} Tag
+ */
+
+/**
+ * @typedef {Record<string, unknown>} Options
+ * @property {AriaAttributes} [aria] - An optional literal describing `aria` attributes such as `role` or `level` or `labelledby`.
+ * @property {string} [class] - The optional class to set to the element. as `className`.
+ * @property {readonly string[]} [classList] - The optional class list to add to the element.
+ * @property {DOMStringMap} [data] - An optional literal describing `dataset` properties.
+ * @property {string} [html] - The optional html to set to the element. as `innerHTML`.
+ * @property {string} [text] - The optional text to set to the element. as `textContent`.
+ * @property {string} [style] - The optional style to apply to the element.
+ * @property {readonly Tag[]} [childNodes] - An optional list of child nodes to append to the element.
+ * @property {readonly Tag[]} [children] - An optional list of child nodes to append to the element.
+ */
+
+/**
+ * @param {Tag} tag - The tag name of the element to create or the element to use. If the name starts with `<`, it will be treated as a query selector and the first matching element will be used, if any.
  * @param {Options} options - The options object.
- * @returns
+ * @returns {SVGElement | Element | null}
  */
 export default (tag, options = {}) => {
   let custom = false, node;
@@ -130,7 +155,7 @@ export default (tag, options = {}) => {
         break;
       }
     }
-  
+
     // decide what to do by inferring the value type
     switch (typeof value) {
       // toggle boolean attributes
