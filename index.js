@@ -29,15 +29,18 @@ export default (tag, options, ...childNodes) => {
       // for svg it's either `svg` itself or `svg:` followed by the tag name
       const isSVG = tag === 'svg';
       const isNS = isSVG || tag.startsWith('svg:');
+      const { is } = options;
+      custom = !!is;
       node = isNS ?
         doc.createElementNS(
           'http://www.w3.org/2000/svg',
           isSVG ? tag : tag.slice(4),
         ) :
-        ((custom = !!options.is) ?
-          doc.createElement(tag, { is: options.is }) :
+        (custom ?
+          doc.createElement(tag, { is }) :
           doc.createElement(tag))
       ;
+      if (custom) node.setAttribute('is', is);
     }
   }
   // otherwise, use the provided node
