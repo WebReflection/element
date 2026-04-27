@@ -40,6 +40,6 @@
   "homepage": "https://github.com/WebReflection/element#readme",
   "devDependencies": {
     "install": "^0.13.0",
-    "terser": "^5.44.0"
+    "terser": "^5.46.2"
   }
 }
