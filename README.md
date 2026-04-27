@@ -2,50 +2,61 @@
 
 <sup>**Social Media Photo by [James Owen](https://unsplash.com/@jhjowen) on [Unsplash](https://unsplash.com/)**</sup>
 
-
 A minimalistic DOM element creation library.
 
-## Usage and Description
+## Installation
 
-The *default* export is a function that accepts a `tag` and an optional `options` or `setup` literal, plus zero, one or more *childNodes* to append: `(tag:string|Node, options:object?, ...(Node|string)[])`
+```sh
+npm i @webreflection/element
+```
+
+## Usage
+
+```js
+import element from '@webreflection/element';
+```
+
+The *default* export is a function that accepts a `tag`, an optional `options` object, and any number of *childNodes* to append:
+
+```ts
+(tag: string | Node, options?: object, ...childNodes: (Node | string)[])
+```
 
 ### The `tag`
 
-  * if it's an *Element* already it uses options to enrich the element as described
-  * if it's a `string` and it does not start with `<`, it creates a new *Element* with such name
-    * if it starts with `svg:` (followed by its name) or the `tag` value is `svg` itself, it creates an *SVGElement*
-    * in every other case it creates an *HTMLElement* or, of course, a *CustomElement* with such name or, if `options.is` exists, a custom element builtin extend
-  * if it's a `string` and it starts with `<` it uses the element found after `document.querySelector`. If no element is found, it returns `null` out of the box. 
+  * If it is already an *Element*, the provided options enrich that element as described below.
+  * If it is a `string` and does not start with `<`, a new *Element* with that name is created.
+    * If it starts with `svg:` (followed by its name), or the `tag` value is `svg` itself, an *SVGElement* is created.
+    * In every other case, an *HTMLElement* or *CustomElement* with that name is created. If `options.is` exists, a built-in custom element extension is created.
+  * If it is a `string` and starts with `<`, the rest of the string is used with `document.querySelector`. If no element is found, `null` is returned.
 
 ### The `options`
 
-Each option `key` / `value` pair is handled to enrich the created or retrieved element in a library friendly way.
-
+Each option `key` / `value` pair enriches the created or retrieved element in a library-friendly way.
 
 #### The `key`
 
-  * if `key in element` is `false`:
-    * **aria** and **data** are used to attach `aria-` prefixed attributes (with the `role` exception) or the element `dataset`
-    * **class**, **html** and **text** are transformed into `className`, `innerHTML` and `textContent` to directly set these properties with less, yet semantic, typing
-    * **@type** is treated as *listener* intent. If its value is an *array*, it is possible to add the third parameter to `element.addEventListener(key.slice(1), ...value)`, otherwise the listener will be added without options
-    * **?name** is treated as boolean attribute intent and, like it is for *@type*, the key will see the first char removed
-  * if `key in element` is `true`:
-    * **classList** adds all classes via `element.classList.add(...value)`
-    * **style** content is directly set via `element.style.cssText = value` or via `element.setAttribute('style', value)` in case of *SVG* element
-    * everything else, including **on...** handlers, is attached directly via `element[key] = value`
-
+  * If `key in element` is `false`:
+    * **aria** and **data** attach `aria-` prefixed attributes (with `role` as an exception) or update the element `dataset`.
+    * **class**, **html**, and **text** map to `className`, `innerHTML`, and `textContent`, so these properties can be set with shorter semantic names.
+    * **@type** is treated as *listener* intent. If its value is an *array*, it is passed to `element.addEventListener(key.slice(1), ...value)` so listener options can be provided. Otherwise, the listener is added without options.
+    * **?name** is treated as boolean attribute intent and, like *@type*, the first character is removed from the key.
+  * If `key in element` is `true`:
+    * **classList** adds all classes via `element.classList.add(...value)`.
+    * **style** content is set via `element.style.cssText = value` or, for an *SVG* element, via `element.setAttribute('style', value)`.
+    * Everything else, including **on...** handlers, is attached directly via `element[key] = value`.
 
 #### The `value`
 
 If `key in element` is `false`, the behavior is inferred by the value:
 
-  * a `boolean` value that is not known in the *element* will be handled via `element.toggleAttribute(key, value)`
-  * a `function` or an `object` with a `handleEvent` are handled via `element.addEventListener(key, value)`
-  * an `object` without `handleEvent` will be serialized as *JSON* to safely land as `element.setAttribute(key, JSON.stringify(value))`
-  * `null` and `undefined` are simply ignored
-  * everything else is simply added as `element.setAttribute(key, value)`
+  * A `boolean` value that is not known in the *element* is handled via `element.toggleAttribute(key, value)`.
+  * A `function` or an `object` with `handleEvent` is handled via `element.addEventListener(key, value)`.
+  * An `object` without `handleEvent` is serialized as *JSON* and set via `element.setAttribute(key, JSON.stringify(value))`.
+  * `null` and `undefined` are ignored.
+  * Everything else is added via `element.setAttribute(key, value)`.
 
-Please read the [example](#example) to have more complete example of how all these features play together.
+Read the [example](#example---live-demo) for a more complete look at how these features work together.
 
 - - -
 
@@ -55,7 +66,7 @@ Please read the [example](#example) to have more complete example of how all the
 // https://cdn.jsdelivr.net/npm/@webreflection/element/index.min.js for best compression
 import element from 'https://esm.run/@webreflection/element';
 
-// direct node reference or `< css-selector`  to enrich, ie:
+// Direct node reference or `< css-selector` to enrich, i.e.:
 // element(document.body, ...) or ...
 element(
   '< body',
@@ -75,14 +86,14 @@ element(
     ['@click']: [
       ({ type, currentTarget }) => {
         console.log(type, currentTarget);
-        currentTarget.dispatchEvent(new Event('custom:event'))
+        currentTarget.dispatchEvent(new Event('custom:event'));
       },
       { once: true },
     ],
   },
   // body children / childNodes
   element('h1', {
-    // clallName
+    // className
     class: 'name',
     // textContent
     text: '@webreflection/element',
@@ -97,7 +108,7 @@ element(
       test: 'ok',
     },
     // serialized as `json` attribute
-    json: {a: 1, b: 2},
+    json: { a: 1, b: 2 },
     // direct listener
     onclick: ({ type, currentTarget }) => {
       console.log(type, currentTarget);
