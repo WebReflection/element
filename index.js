@@ -9,7 +9,7 @@ const empty = {};
 /**
  * @template {Tag} PassedTag
  * @param {PassedTag} tag - The tag name of the element to create or the element to use. If the name starts with `<`, it will be treated as a query selector and the first matching element will be used, if any.
- * @param {Options?} [options] - The options object.
+ * @param {Options<PassedTag>?} [options] - The options object.
  * @param {ChildNodes} childNodes - The optional child nodes to append to the element.
  * @returns {Output<PassedTag>}
  */

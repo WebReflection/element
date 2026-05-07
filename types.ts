@@ -57,10 +57,21 @@ export type AriaAttribute =
   | "valuetext";
 
 /**
+ * Attribute value.
+ */
+export type AttributeValue =
+  | bigint
+  | boolean
+  | number
+  | string
+  | null
+  | undefined;
+
+/**
  * Object to set aria labels.
  */
-export type AriaLabels = Readonly<Record<string, string>> &
-  Partial<Readonly<Record<AriaAttribute, string>>>;
+export type AriaLabels = Readonly<Record<string, AttributeValue>> &
+  Partial<Readonly<Record<AriaAttribute, AttributeValue>>>;
 
 /**
  * Type of tag used to create custom elements.
@@ -75,7 +86,9 @@ export type HTMLElementTag = keyof HTMLElementTagNameMap;
 /**
  * Type of tag used to create SVG elements.
  */
-export type SVGElementTag = "svg" | `svg:${Exclude<keyof SVGElementTagNameMap, "svg">}`
+export type SVGElementTag =
+  | "svg"
+  | `svg:${Exclude<keyof SVGElementTagNameMap, "svg">}`;
 
 /**
  * Type of tag used to select an existing element.
@@ -94,9 +107,9 @@ export type Tag =
   | SVGElementTag;
 
 /**
- * Type of `options` argument on main function.
+ * Base options of main function.
  */
-export type Options = Readonly<Record<string | symbol, unknown>> & Readonly<{
+export type BaseOptions = Readonly<{
   /**
    * An optional literal describing `aria` attributes such as `role` or `level`
    * or `labelledby`.
@@ -152,11 +165,11 @@ export type ChildNodes = readonly (
  * be fount on maps.
  */
 export type QuerySelect<Selector> =
-  | (Selector extends keyof HTMLElementTagNameMap
-      ? HTMLElementTagNameMap[Selector]
-      : Selector extends keyof SVGElementTagNameMap
-        ? SVGElementTagNameMap[Selector]
-        : Element | SVGElement)
+  | (Selector extends keyof HTMLElementTagNameMap ?
+      HTMLElementTagNameMap[Selector]
+    : Selector extends keyof SVGElementTagNameMap ?
+      SVGElementTagNameMap[Selector]
+    : Element | SVGElement)
   | null;
 
 /**
@@ -168,13 +181,13 @@ export type ExtractSelector<SelectorTag extends QuerySelectTag> =
 /**
  * Strips "svg:" prepend from given {@linkcode SVGElementTag}.
  */
-export type ExtractSVGTag<SVGTag extends SVGElementTag> = SVGTag extends "svg"
-  ? SVGTag
-  : SVGTag extends `svg:${infer Tag}`
-    ? Tag extends keyof SVGElementTagNameMap
-      ? Tag
-      : never
-    : never;
+export type ExtractSVGTag<SVGTag extends SVGElementTag> =
+  SVGTag extends "svg" ? SVGTag
+  : SVGTag extends `svg:${infer Tag}` ?
+    Tag extends keyof SVGElementTagNameMap ?
+      Tag
+    : never
+  : never;
 
 /**
  * Output type that follows the following logic:
@@ -186,12 +199,72 @@ export type ExtractSVGTag<SVGTag extends SVGElementTag> = SVGTag extends "svg"
  *   - For any other tring, it just asumes it's `Element`.
  * - If the passed `tag` is anything other than `string`, then it infers the type is the same as the received element.
  */
-export type Output<PassedTag extends Tag> = PassedTag extends string
-  ? PassedTag extends HTMLElementTag
-    ? HTMLElementTagNameMap[PassedTag]
-    : PassedTag extends SVGElementTag
-      ? SVGElementTagNameMap[ExtractSVGTag<PassedTag>]
-      : PassedTag extends QuerySelectTag
-        ? QuerySelect<ExtractSelector<PassedTag>>
-        : Element
+export type Output<PassedTag extends Tag> =
+  PassedTag extends string ?
+    PassedTag extends HTMLElementTag ? HTMLElementTagNameMap[PassedTag]
+    : PassedTag extends SVGElementTag ?
+      SVGElementTagNameMap[ExtractSVGTag<PassedTag>]
+    : PassedTag extends QuerySelectTag ? QuerySelect<ExtractSelector<PassedTag>>
+    : Element
   : PassedTag;
+
+/**
+ * Overrides native event listeners to have a `currentTarget` and `this` that
+ * references to the current element.
+ */
+export type EventHandlerOverride<PassedTag extends Tag> = {
+  [Key in Extract<keyof Output<PassedTag>, keyof GlobalEventHandlers>]: (
+    this: Output<PassedTag>,
+    event: Omit<
+      Parameters<NonNullable<GlobalEventHandlers[Key]>>[0],
+      "currentTarget"
+    > & { currentTarget: Output<PassedTag> },
+  ) => void;
+};
+
+/**
+ * Adds `@` event listeners auto-completion (both as callback and tuple).
+ */
+export type AtEventHandlerOverride<PassedTag extends Tag> = {
+  [Key in keyof EventHandlerOverride<PassedTag> as Key extends (
+    `on${infer Rest}`
+  ) ?
+    `@${Rest}`
+  : never]:
+    | EventHandlerOverride<PassedTag>[Key]
+    | readonly [
+        handler: EventHandlerOverride<PassedTag>[Key],
+        options?: boolean | AddEventListenerOptions,
+      ];
+};
+
+/**
+ * Gets all the given elemen properties, in the case of SVG they are inferred
+ * as {@linkcode AttributeValue} because the native type for props is read-only,
+ * but they can be set as attributes.
+ */
+export type PropertiesOrAttributes<PassedTag extends Tag> = Partial<
+  Omit<
+    PassedTag extends SVGElementTag | SVGElement ?
+      Record<
+        keyof (PassedTag extends SVGElementTag ?
+          SVGElementTagNameMap[ExtractSVGTag<PassedTag>]
+        : PassedTag),
+        AttributeValue
+      >
+    : Output<PassedTag>,
+    | keyof BaseOptions
+    | keyof ARIAMixin
+    | keyof Node
+    | keyof EventHandlerOverride<PassedTag>
+  > &
+    EventHandlerOverride<PassedTag> &
+    AtEventHandlerOverride<PassedTag>
+>;
+
+/**
+ * Type of `options` argument on main function.
+ */
+export type Options<PassedTag extends Tag> = BaseOptions &
+  PropertiesOrAttributes<PassedTag> &
+  Readonly<Record<string | symbol, unknown>>;
