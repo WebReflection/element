@@ -103,6 +103,10 @@ export type Options = Readonly<Record<string | symbol, unknown>> & Readonly<{
    */
   aria?: AriaLabels;
   /**
+   * An optional JSX-friendly list of children to append to the element.
+   */
+  children?: ChildNodes;
+  /**
    * The optional class to set to the element. as `className`.
    */
   class?: string;
@@ -137,7 +141,7 @@ export type Options = Readonly<Record<string | symbol, unknown>> & Readonly<{
 }>;
 
 /**
- * Type of `...childNodes` argument on main function.
+ * Type of child nodes that can be appended to the element.
  */
 export type ChildNodes = readonly (
   | DocumentFragment
@@ -195,3 +199,14 @@ export type Output<PassedTag extends Tag> = PassedTag extends string
         ? QuerySelect<ExtractSelector<PassedTag>>
         : Element
   : PassedTag;
+
+/**
+ * Creates, selects, or enriches a DOM element.
+ */
+declare function element<PassedTag extends Tag>(
+  tag: PassedTag,
+  options?: Options | null,
+  ...children: ChildNodes
+): Output<PassedTag>;
+
+export default element;
