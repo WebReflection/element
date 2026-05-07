@@ -13,7 +13,7 @@ const empty = {};
  * @param {ChildNodes} childNodes - The optional child nodes to append to the element.
  * @returns {Output<PassedTag>}
  */
-export default (tag, options, ...childNodes) => {
+export default (tag, options, ...children) => {
   options ??= empty;
   let doc = options.document || document, custom = false, node;
   // if `tag` is a string, create a new element, or ...
@@ -49,6 +49,13 @@ export default (tag, options, ...childNodes) => {
   // loop through options keys and symbols
   for (let key of ownKeys(options)) {
     if (custom && key === 'is') continue;
+
+    // JSX transform friendly: `children` is an array of children
+    if (key === 'children' && !children.length && isArray(options[key])) {
+      children = options[key];
+      continue;
+    }
+
     let value = options[key];
     // if `key` is not a node known property ...
     if (!(key in node)) {
@@ -86,6 +93,7 @@ export default (tag, options, ...childNodes) => {
         }
       }
     }
+
     // if `key` is a node known property ...
     if (key in node) {
       switch (key) {
@@ -150,7 +158,7 @@ export default (tag, options, ...childNodes) => {
     node.setAttribute(key, value);
   }
 
-  if (childNodes.length) node.append(...childNodes);
+  if (children.length) node.append(...children);
 
   return node;
 };

@@ -36,6 +36,7 @@ Each option `key` / `value` pair enriches the created or retrieved element in a 
 
 #### The `key`
 
+  * If `key` is `children` and no extra arguments are passed and `options.children` is an array, it is compatible with latest *React* transformed *JSX* expectations and `...children` will reflect that list of entries.
   * If `key in element` is `false`:
     * **aria** and **data** attach `aria-` prefixed attributes (with `role` as an exception) or update the element `dataset`.
     * **class**, **html**, and **text** map to `className`, `innerHTML`, and `textContent`, so these properties can be set with shorter semantic names.
