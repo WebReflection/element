@@ -4,7 +4,14 @@ const { isArray } = Array;
 const { stringify } = JSON;
 const { assign } = Object;
 const { ownKeys } = Reflect;
+
 const empty = {};
+
+const alias = {
+  'class': 'className',
+  'html': 'innerHTML',
+  'text': 'textContent',
+};
 
 /**
  * @template {Tag} PassedTag
@@ -57,9 +64,25 @@ export default (tag, options, ...children) => {
     }
 
     let value = options[key];
-    // if `key` is not a node known property ...
-    if (!(key in node)) {
-      // handle with ease intents: `aria`, `data`, `style`, `html`, `text`
+
+    // if `key` is a node known property ...
+    if (key in node) {
+      if (key === 'classList')
+        node.classList.add(...value);
+      else {
+        // try to set the value directly
+        try {
+          node[key] = value;
+        }
+        // otherwise set the value as attribute (svg friendly)
+        catch {
+          node.setAttribute(key, value);
+        }
+      }
+      continue;
+    }
+    else {
+      // handle with ease intents: `aria`, `data`, `style`, `class`, `html`, `text`
       switch (key) {
         case 'aria': {
           for (let k of ownKeys(value)) {
@@ -79,40 +102,13 @@ export default (tag, options, ...children) => {
           else node.style.cssText = value;
           continue;
         }
-        case 'class': {
-          key = 'className';
-          break;
-        }
-        case 'html': {
-          key = 'innerHTML';
-          break;
-        }
+        case 'class':
+        case 'html':
         case 'text': {
-          key = 'textContent';
-          break;
+          node[alias[key]] = value;
+          continue;
         }
       }
-    }
-
-    // if `key` is a node known property ...
-    if (key in node) {
-      switch (key) {
-        case 'classList': {
-          node.classList.add(...value);
-          break;
-        }
-        default: {
-          // try to set the value directly
-          try {
-            node[key] = value;
-          }
-          // otherwise set the value as attribute (svg friendly)
-          catch {
-            node.setAttribute(key, value);
-          }
-        }
-      }
-      continue;
     }
 
     // uhtml / lit style attributes hints friendly
